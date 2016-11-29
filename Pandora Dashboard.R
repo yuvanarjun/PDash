@@ -99,7 +99,7 @@ ui <- fluidPage(
              
              fluidRow(
                column(4, offset = 0, DT::dataTableOutput("city_table")),
-               column(8, leafletOutput("map", width = "100%", height=800))
+               column(8, leafletOutput("map", width = "100%", height=800), actionButton("reset_button", "World view"))
                
              ),
              
@@ -171,8 +171,6 @@ server <- function(input, output,session) {
     }
   })
   
-  
-  
   output$city_table <- DT::renderDataTable(DT::datatable(t(data_PNR[input$select_city,temp()]), options = list(lengthMenu = c(10, 15, 25, 50), pageLength = 15)))
   
   #data_PNR$popup_new <- reactive(paste0("City: ",data_PNR$NAME, "<br> Percent GDP@Risk Rank: ",data_PNR[,paste0("RANKING OF PERCENTAGE GDP AT RISK FROM ",names(threat_choices)[as.numeric(input$select_threat)]," THREAT")], "<br> Overall GDP@Risk Rank for chosen threat:",data_PNR[,paste0("RANKING OF USD BN GDP AT RISK FROM ",names(threat_choices)[as.numeric(input$select_threat)]," THREAT")]))
@@ -181,15 +179,182 @@ server <- function(input, output,session) {
   output$map <- renderLeaflet({
     leaflet() %>%
       addTiles(urlTemplate="https://a.tiles.mapbox.com/v3/mapbox.world-bright/{z}/{x}/{y}.png") %>%
+      
+      ##Add individual layers for threat to the map
+      #Cyber Catastrophe
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:cyber_threat-copy",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Cyber Style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Cyber Catastrophe")%>%
+      
+      #Drought
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:drought_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Drought Style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Drought")%>%
+      
+      #Earthquake
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:eq_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="EQ style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Earthquake")%>%
+      
+      #Flood
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:flood_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Flood")%>%
+      
+      #Heatwave and Freeze
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:freeze_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Heat Freeze style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Heatwave and Freeze")%>%
+      
+      #Human Pandemic
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:humanpandemic_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Human Pandemic Style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Human Pandemic")%>%
+      
+      #War
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:war_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="War threat", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Interstate War")%>%
+      
+      #War Conflict Lines
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:war_conflictlines",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="War conflict lines", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Interstate War")%>%
+      
+      #Market Crash
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:fincat_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="FinCat Market Crash Style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Market Crash")%>%
+      
+      #Nuclear Power Plant operational
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:nuclear_plant_op",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Nuclear Plant Style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Nuclear Meltdown")%>%
+      
+      #Nuclear Plant Buffer
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:nuclear_buffer",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Nuclear Buffer Style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Nuclear Meltdown")%>%
+      
+      #Oil Price Shock
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:oil_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Oil Shock Style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Oil Price Shock")%>%
+      
+      #Plant Epidemic
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:plantepidemic_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Plant Epidemic Style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Plant Epidemic")%>%
+      
+      #Power Outage
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:outage_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Outage style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Power Outage")%>%
+      
+      #Social Unrest
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:socialunrest_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Social Unrest Style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Social Unrest")%>%
+      
+      #Solar Storm Threat
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:solarstorm_contourbands",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Solar Storm Band", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Solar Storm")%>%
+      
+      #Solar Storm Lines
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:solarstorm_contourlines",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Solar Storm Lines", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Solar Storm")%>%
+      
+      #Sovereign Default
       addWMSTiles(
         "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
         layers = "geo-crf:sovereigndefault_threat",
         options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Sovereign Default Style", opacity=50),
-        attribution = "This map was researched by CAR Ltd 2014")%>%
-      setView(lng = data_PNR[input$select_city,"LON"], lat = data_PNR[input$select_city,"LAT"], zoom = 10) %>%
-      addCircleMarkers(data=data_PNR, lat = ~LAT, lng = ~LON, popup = ~data_PNR$`POPUP INFO`, color = "red", fillOpacity = 1,  weight=1, radius=3+data_PNR[,paste0(names(threat_choices)[as.numeric(input$select_threat)], " GDP AT RISK USD BN")])
+        attribution = "This map was researched by CAR Ltd 2014", group ="Sovereign Default")%>%
       
-    
+      #Windstorm
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:windstorm_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Windstorm style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Windstorm")%>%
+      
+      #Terrorism
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:terrorism_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Terrorism style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Terrorism")%>%
+      
+      #Tsunami
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:tsunami_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Tsunami style", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Tsunami")%>%
+      
+      #Volcano Threat
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:volcanic_threat1",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Volcano locations", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Volcanic Eruption")%>%
+      
+      #Volcano Buffer Zone
+      addWMSTiles(
+        "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
+        layers = "geo-crf:volcano_buffer",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Volcano buffer zone", opacity=50),
+        attribution = "This map was researched by CAR Ltd 2014", group ="Volcanic Eruption")%>%
+      
+      
+      setView(lng = data_PNR[input$select_city,"LON"], lat = data_PNR[input$select_city,"LAT"], zoom = 10) %>%
+      addCircleMarkers(data=data_PNR, lat = ~LAT, lng = ~LON, popup = ~data_PNR$`POPUP INFO`, color = "red", fillOpacity = 1,  weight=1, radius=3+data_PNR[,paste0(names(threat_choices)[as.numeric(input$select_threat)], " GDP AT RISK USD BN")]) %>%
+      
+      #Add layers control
+      addLayersControl(overlayGroups=c("Cyber Catastrophe","Drought","Earthquake","Flood","Heatwave and Freeze","Human Pandemic","Interstate War","Market Crash","Nuclear Meltdown","Oil Price Shock","Plant Epidemic","Power Outage","Social Unrest","Solar Storm","Sovereign Default","Windstorm","Terrorism","Tsunami","Volcanic Eruption"), options = layersControlOptions(collapsed=TRUE), position = c("topright", "bottomright", "bottomleft", "topleft"))  %>%
+      hideGroup(c("Cyber Catastrophe","Drought","Earthquake","Flood","Heatwave and Freeze","Human Pandemic","Interstate War","Market Crash","Nuclear Meltdown","Oil Price Shock","Plant Epidemic","Power Outage","Social Unrest","Solar Storm","Sovereign Default","Windstorm","Terrorism","Tsunami","Volcanic Eruption"))
+  })
+  
+  #Reset view to a world view
+  observe({
+    input$reset_button
+    leafletProxy("map") %>% setView(lat = 20, lng = 0, zoom = 2)
   })
   
   
