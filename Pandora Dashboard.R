@@ -183,11 +183,11 @@ server <- function(input, output,session) {
       addTiles(urlTemplate="https://a.tiles.mapbox.com/v3/mapbox.world-bright/{z}/{x}/{y}.png") %>%
       addWMSTiles(
         "https://pan-api.cambridgeriskframework.com/geoserver/geo-crf/wms",
-        layers = "geo-crf:windstorm_threat",
-        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Windstorm style", opacity=50),
+        layers = "geo-crf:sovereigndefault_threat",
+        options = WMSTileOptions(format = "image/png", transparent = TRUE, styles="Sovereign Default Style", opacity=50),
         attribution = "This map was researched by CAR Ltd 2014")%>%
       setView(lng = data_PNR[input$select_city,"LON"], lat = data_PNR[input$select_city,"LAT"], zoom = 10) %>%
-      addCircleMarkers(data=data_PNR, lat = ~LAT, lng = ~LON, popup = ~data_PNR$`POPUP INFO`, color = "blue",  weight=1, radius=6+sqrt(data_PNR[,paste0(names(threat_choices)[as.numeric(input$select_threat)], " GDP AT RISK USD BN")]))
+      addCircleMarkers(data=data_PNR, lat = ~LAT, lng = ~LON, popup = ~data_PNR$`POPUP INFO`, color = "red", fillOpacity = 1,  weight=1, radius=3+data_PNR[,paste0(names(threat_choices)[as.numeric(input$select_threat)], " GDP AT RISK USD BN")])
       
     
   })
