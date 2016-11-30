@@ -73,6 +73,75 @@ data_PNR <- data_PNR[,order(names(data_PNR))]
 city_choices <- setNames(1:nrow(data_PNR),data_PNR$NAME)
 threat_choices <- setNames(1: sum(grepl(" GDP AT RISK USD BN", names(data_PNR))), as.character(gsub(" GDP AT RISK USD BN","",names(data_PNR)[grep(" GDP AT RISK USD BN", names(data_PNR))])))
 
+#Intialize the LIS information for each threat as a dataframe
+LIS_data <- data.frame(matrix(c(
+  "CYBER CATASTROPHE","CY1","A sporadic set of technology failures. (E.g. GDP outages, accidental technical faults, cyber attacks on individual organisations, reduces outputs of companies with high dependence on technology, and consumer confidence is affected)",
+  "CYBER CATASTROPHE","CY2","Systemic cyber attack. (E.g. Sybil logic bomb, causes heavy losses to many commercial companies operating in that city and undermines confidence of general public in IT systems in general)",
+  "CYBER CATASTROPHE","CY3","Cyber attacks on critical infrastructure destroys the power distribution grid and causes power loss in the city for many months",
+  "DROUGHT","DR1","Severe Drought - Localised drought causes water consumption restrictions for that city for six months, resulting in water rationing for businesses and residential. Water is prioritized for industry, agriculture and emergency provision",
+  "DROUGHT","DR2","Extreme Drought - Three successive seasons of record levels of below average rainfall results in major water shortages for several years",
+  "DROUGHT","DR3","Exceptional Drought - Sustained for several years. Major change in precipitation patterns causes extended drought, which results in severe water consumption restrictions for several years",
+  "EARTHQUAKE","EQ1","A 'Large Magnitude Earthquake' (Ms6.5) within the city boundaries. Centroid of city experiences VII (PGA 250 - 400)",
+  "EARTHQUAKE","EQ2","A 'Great Earthquake' (Ms7.0) with its epicentre close to the edge of the city, just outside its boundaries. Centroid of city experiences VIII (PGA 400 - 600)",
+  "EARTHQUAKE","EQ3","A 'Great Earthquake' (Ms7.5) occurring at shall depth with its epicentre close to the centre of the city. Centroid of city experiences IX (PGA 600 - 1,000)",
+  "FLOOD","FL1","10% of city affected by flooding, reaching 1m depth in parts, with low velocity water and a recovery period that is several months long",
+  "FLOOD","FL2","25% of city area affected by flood waters that reach over 3m depth (more than one storey) in parts, with medium velocity water moderately contaminated",
+  "FLOOD","FL3","Over 50% of city land area affected by flooding, reaching more than two storeys in parts, high velocity destructive water flows and highly polluted waters",
+  "FREEZE","FR1","Freeze of up to five degrees below 0°C for three weeks (-20 to 100 Degree-days) with some snow and ice, moderate winds",
+  "FREEZE","FR2","Freeze of up to 10 degrees below 0°C for eight weeks, combined with deep snow and high winds",
+  "FREEZE","FR3","Freeze of up to 20 degrees below 0°C for 12 weeks, combined with heavy snow and severe ice loads periodically",
+  "HEATWAVE","HW1","Heatwave of 1 - 5°C above 32°C for four weeks (20 to 100 Degree-days)",
+  "HEATWAVE","HW2","Heatwave of 5 - 8°C above 32°C for eight weeks (50 to 500 Degree-days)",
+  "HEATWAVE","HW3","Heatwave of 8 - 12°C above 32°C for 16 weeks (112 to 1,300 Degree-days)",
+  "HUMAN PANDEMIC","HE1","Localised epidemic of new emergent disease with case fatality rate (CFR) of 10% causes public health emergency and fear in population, leads to a loss of tourism trade",
+  "HUMAN PANDEMIC","HE2","Pandemic influenza virus infects 43% of the population, with CFR of 0.3%",
+  "HUMAN PANDEMIC","HE3","Pandemic of high fatality disease, with CFR of 3%",
+  "INTERSTATE WAR","IW1","City mobilized for war, but not attacked; mobilization switches civilian commerce to military production; population gripped by fear, consumer demand drops, parts of population flees. Investor confidence is affected; Conflict lasts a year",
+  "INTERSTATE WAR","IW2","City suffers sporadic attack from occasional missiles or aerial bombardment, possible damage to city infrastructure from military cyber attack; City is mobilized for war; significant emigration of population from city. Investors withdraw",
+  "INTERSTATE WAR","IW3","City is the target of strategic bombing by energy forces, destroying industrial and commercial output and military facilities in the city; Major emigration by population. Possible rebuilding afterwards by major injection of capita. Conflict lasts three years",
+  "MARKET CRASH","MC1","Stock market index drops 10% peak-to-trough within a single year (E.g. Asian Crisis, 1997)",
+  "MARKET CRASH","MC2","Stock market index drops 50% peak-to-trough within a single year (E.g. Great Financial Crisis, 2008)",
+  "MARKET CRASH","MC3","Stock market index drops 85% peak-to-trough within a single year (E.g. Wall Street Crash, 1929)",
+  "NUCLEAR MELTDOWN","NP1","City receives radioactive fallout of >0.01 Bq/km2 or 0.3 Curies of C137 (I.e. Similar to within 200km of Chernobyl 1986 or 120km of Fukushima 2011)",
+  "NUCLEAR MELTDOWN","NP2","City receives radioactive fallout of >0.1 Bq/km2 or 3 Curies of C137 (I.e. Similar to within 70km of Chernobyl 1986 or 50km of Fukushima 2011)",
+  "NUCLEAR MELTDOWN","NP3","City receives radioactive fallout of >1 Bq/km2 or 30 Curies of C137 (I.e. Similar to within 30km of Chernobyl 1986)",
+  "OIL PRICE SHOCK","OP1","Sudden increase in oil price by 10%",
+  "OIL PRICE SHOCK","OP2","Sudden increase in oil price by 25% (Similar to Oil Price Crisis of 1974)",
+  "OIL PRICE SHOCK","OP3","Sudden increase in oil price by 50%",
+  "PLANT EPIDEMIC","PE1","Localised plant epidemic affects prices of staple foods in city markets",
+  "PLANT EPIDEMIC","PE2","National plant epidemic affects price of staple foods in city markets",
+  "PLANT EPIDEMIC","PE3","International plant epidemic affects price of staple foods in city markets",
+  "POWER OUTAGE","PO1","One City-Day of Power Loss (100% of city loses power for 11 day or 50% of city loses power for 2 days, etc.)",
+  "POWER OUTAGE","PO2","A 5-City-Day event (100% of city loses power for 5 days, 50% of city loses power for 10 days, etc.)",
+  "POWER OUTAGE","PO3","A 10-City-Day event (100% of city loses power for 10 days)",
+  "SEPARATISM","SP1","Civil Unrest causes riots and protests in the streets for months; violent confrontations with police",
+  "SEPARATISM","SP2","Incidents of sectarian fighting between armed gangs and private militias in the streets of the city for multiple years",
+  "SEPARATISM","SP3","Civil war involves months of street fighting between well-organized and well-equipped armies, using heavy weaponry in sectarian divide in country",
+  "SOCIAL UNREST","SU1","Civil Unrest causes riots and protests in the streets for months; violent confrontations with police",
+  "SOLAR STORM","SS1","NOAA Space Weather Scale for radiation storms level S4 and equivalent to a solar flare of X20. Radiation hazard to passengers and crew in commercial jets at high latitudes (approximately 10 chest x-rays). Satellite systems experience memory device problems and noise on imaging systems, GPS navigation systems prone to error, blackout of HF radio communications. Some low level electrical interference and voltage control problems. 3-5 days of disruption caused",
+  "SOLAR STORM","SS2","NOAA Space Weather Scale for radiation storms level S5 and equivalent to a solar flare of X40 (Similar to 'Carrington Event'; Radiation hazard to passengers and crew in commercial jets at high latitudes (approximately 10 chest x-rays). Satellite systems experience memory device problems and noise on imaging systems, GPS navigation systems prone to error, blackout of HF radio communications. Some low level electrical interference and voltage control problems. 3-5 days of disruption caused",
+  "SOLAR STORM","SS3","NOAA Space Weather Scale for radiation storms level S6+ (Beyond 5-point NOAA Scale). Estimated effects of a solar flare of X60 - also known as a class Z event. High radiation exposure to passengers and crew in commercial jets at high latitudes (approximately 100 chest x-rays).Satellites rendered useless, GPS navigation systems fail, serious noise on imaging systems. Telecommunication systems fail. Widespread voltage control problems and protective system problems can occur, some grid systems may experience complete collapse or blackouts. Transformers may experience damage. Several weeks of disruption caused before systems back online",
+  "SOVEREIGN DEFAULT","SD1","Country defaults and reschedules its debt, devalues its currency substantially; Investors flee. National economy loses substantial foreign direct investment",
+  "TEMPERATE WINDSTORM","HU1","Category 1 Hurricane: Windspeed 118 - 153km/hr",
+  "TEMPERATE WINDSTORM","HU2","Category 3 Hurricane: Windspeed 178 - 209km/hr",
+  "TEMPERATE WINDSTORM","HU3","Category 5 Hurricane: Windspeed >250km/hr",
+  "TERRORISM","TR1","Terror campaign with small arms and limited resources. (E.g. Shootings, poisonings, food chain sabotage, etc., with repeated attacks over a period of many months that causes fear and distrust in urban population.)",
+  "TERRORISM","TR2","Well resourced and organised terrorist attacks on high profile targets. (E.g. Major truck bombings, airplanes into buildings or other surprise destructive events, causes horrific loss of life and major destruction to property in and around city centre.)",
+  "TERRORISM","TR3","WMD Terrorist Attack - City is attacked by sophisticated terrorist operation using weapons of mass destruction (WMD). (E.g. Anthrax, air-dispersed bio-weapons, chemical or radioactive contaminant, or small yield nuclear detonation kills large numbers of people and contaminates many buildings in the Central Business District.)",
+  "TROPICAL WINDSTORM","HU1","Category 1 Hurricane: Windspeed 118 - 153km/hr",
+  "TROPICAL WINDSTORM","HU2","Category 3 Hurricane: Windspeed 178 - 209km/hr",
+  "TROPICAL WINDSTORM","HU3","Category 5 Hurricane: Windspeed >250km/hr",
+  "TSUNAMI","TS1","Tsunami with 3m run-up",
+  "TSUNAMI","TS2","Tsunami with 6m run-up",
+  "TSUNAMI","TS3","Tsunami with 12m run-up",
+  "VOLCANIC ERUPTION","VE1","Ashcloud shuts city for extended period, and covers it with several centimeters of ash, preventing air travel, road traffic, port functions and normal business activity",
+  "VOLCANIC ERUPTION","VE2","Ashcloud covers city to 1m depth, entailing lengthy recovery process",
+  "VOLCANIC ERUPTION","VE3","Parts of city impacted by direct effects of volcanic eruption (pyroclastic gases, lahar flows, etc.). City evacuated and population not allowed to return for some time"
+), ncol=3, byrow=TRUE))
+names(LIS_data) <- c("Threat","LIS","Description")
+
+
+
 #Shiny User Interface (SHINY UI)
 ui <- fluidPage(
   tabsetPanel(
@@ -359,7 +428,6 @@ server <- function(input, output,session) {
   
   #Display only current threat layer on the map
   changed_threat <- reactive({names(threat_choices)[as.numeric(input$select_threat)]})
-  
   observe({ 
     
     if(changed_threat() %in% c("FREEZE","HEATWAVE"))
@@ -411,6 +479,7 @@ server <- function(input, output,session) {
   })
   
   #Display top cities for each threat
+  
   output$cityrankchart <- renderPlotly({
     
     threatcity <- data_PNR[,c("NAME",paste0(names(threat_choices)[as.numeric(input$select_threat)]," GDP AT RISK USD BN"))]
@@ -475,7 +544,6 @@ server <- function(input, output,session) {
 
 #Launch App
 shinyApp(ui = ui, server = server)
-
 
 
 
