@@ -166,8 +166,9 @@ ui <- fluidPage(
              fluidRow(tags$br()),
              
              fluidRow(
-               column(4, offset = 0, DT::dataTableOutput("city_table")),
-               column(8, leafletOutput("map", width = "100%", height=800), actionButton("reset_button", "World view"), actionButton("currentthreat_layer", "Current threat"))
+               column(3, offset = 0, DT::dataTableOutput("city_table")),
+               column(3, offset = 0, DT::dataTableOutput("LIS_table")),
+               column(6, leafletOutput("map", width = "100%", height=800), actionButton("reset_button", "World view"), actionButton("currentthreat_layer", "Current threat"))
                
              ),
              
@@ -215,7 +216,6 @@ ui <- fluidPage(
 server <- function(input, output,session) {
   
   #Display City Table
-  
   temp <- reactive ({
     if(input$select_threat == 1)
     {
@@ -238,7 +238,10 @@ server <- function(input, output,session) {
       else temp <- grepl("RANKING OF PERCENT", names(data_PNR)) & grepl(names(threat_choices)[as.numeric(input$select_threat)], names(data_PNR))
     }
   })
-  output$city_table <- DT::renderDataTable(DT::datatable(t(data_PNR[input$select_city,temp()]), options = list(lengthMenu = c(10, 15, 25, 50), pageLength = 15)))
+  output$city_table <- DT::renderDataTable(DT::datatable(t(data_PNR[input$select_city,temp()]), options = list(lengthMenu = c(10, 15, 25, 50), pageLength = 15),colnames= " "))
+  
+  #Display LIS information Table
+  output$LIS_table <- DT::renderDataTable(DT::datatable(LIS_data[LIS_data$Threat == names(threat_choices)[as.numeric(input$select_threat)],c("LIS","Description")],rownames= FALSE))
   
   #data_PNR$popup_new <- reactive(paste0("City: ",data_PNR$NAME, "<br> Percent GDP@Risk Rank: ",data_PNR[,paste0("RANKING OF PERCENTAGE GDP AT RISK FROM ",names(threat_choices)[as.numeric(input$select_threat)]," THREAT")], "<br> Overall GDP@Risk Rank for chosen threat:",data_PNR[,paste0("RANKING OF USD BN GDP AT RISK FROM ",names(threat_choices)[as.numeric(input$select_threat)]," THREAT")]))
   
