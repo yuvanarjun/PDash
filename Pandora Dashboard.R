@@ -37,7 +37,6 @@ json_file_1 <- lapply(json_file_1, function(x) {
   x[sapply(x, is.null)] <- NA
   unlist(x)
 })
-
 json_file_2 <- lapply(json_file_2, function(x) {
   x[sapply(x, is.null)] <- NA
   unlist(x)
@@ -85,7 +84,7 @@ ui <- fluidPage(
                
                column(2, offset=0, selectInput("select_threat", label = h3("Threat selection"),
                                                choices = threat_choices,
-                                               selected = 2)),
+                                               selected = 1)),
                
                column(2, offset=0, selectInput("select_category", label = h3("Category selection"), 
                                                choices = list("All Categories" = 1, "Assessment Grade" = 2, "Economic" = 3, "GDP@Risk: GDP" = 4, "GDP@Risk: Percentage" = 5, "Risk Ranking: GDP" = 6, "Risk Ranking: Percentage" = 7), 
@@ -170,12 +169,12 @@ server <- function(input, output,session) {
       else temp <- grepl("RANKING OF PERCENT", names(data_PNR)) & grepl(names(threat_choices)[as.numeric(input$select_threat)], names(data_PNR))
     }
   })
-  
   output$city_table <- DT::renderDataTable(DT::datatable(t(data_PNR[input$select_city,temp()]), options = list(lengthMenu = c(10, 15, 25, 50), pageLength = 15)))
   
   #data_PNR$popup_new <- reactive(paste0("City: ",data_PNR$NAME, "<br> Percent GDP@Risk Rank: ",data_PNR[,paste0("RANKING OF PERCENTAGE GDP AT RISK FROM ",names(threat_choices)[as.numeric(input$select_threat)]," THREAT")], "<br> Overall GDP@Risk Rank for chosen threat:",data_PNR[,paste0("RANKING OF USD BN GDP AT RISK FROM ",names(threat_choices)[as.numeric(input$select_threat)]," THREAT")]))
   
   #Display Threat Map
+  threat_layers <- c("CYBER CATASTROPHE","DROUGHT","EARTHQUAKE","FLOOD","HEATWAVE AND FREEZE","HUMAN PANDEMIC","INTERSTATE WAR","MARKET CRASH","NUCLEAR MELTDOWN","OIL PRICE SHOCK","PLANT EPIDEMIC","POWER OUTAGE","SOCIAL UNREST","SOLAR STORM","SOVEREIGN DEFAULT","WINDSTORM","TERRORISM","TSUNAMI","VOLCANIC ERUPTION")
   output$map <- renderLeaflet({
     leaflet() %>%
       addTiles(urlTemplate="https://a.tiles.mapbox.com/v3/mapbox.world-bright/{z}/{x}/{y}.png") %>%
@@ -347,9 +346,9 @@ server <- function(input, output,session) {
       addCircleMarkers(data=data_PNR, lat = ~LAT, lng = ~LON, popup = ~data_PNR$`POPUP INFO`, color = "red", fillOpacity = 1,  weight=1, radius=3+data_PNR[,paste0(names(threat_choices)[as.numeric(input$select_threat)], " GDP AT RISK USD BN")]) %>%
       
       #Add layers control
-      addLayersControl(overlayGroups=c("CYBER CATASTROPHE","DROUGHT","EARTHQUAKE","FLOOD","HEATWAVE AND FREEZE","HUMAN PANDEMIC","INTERSTATE WAR","MARKET CRASH","NUCLEAR MELTDOWN","OIL PRICE SHOCK","PLANT EPIDEMIC","POWER OUTAGE","SOCIAL UNREST","SOLAR STORM","SOVEREIGN DEFAULT","WINDSTORM","TERRORISM","TSUNAMI","VOLCANIC ERUPTION"), options = layersControlOptions(collapsed=TRUE,autoZIndex = TRUE), position = c("topright", "bottomright", "bottomleft", "topleft"))  %>%
-      hideGroup(c("CYBER CATASTROPHE","DROUGHT","EARTHQUAKE","FLOOD","HEATWAVE AND FREEZE","HUMAN PANDEMIC","INTERSTATE WAR","MARKET CRASH","NUCLEAR MELTDOWN","OIL PRICE SHOCK","PLANT EPIDEMIC","POWER OUTAGE","SOCIAL UNREST","SOLAR STORM","SOVEREIGN DEFAULT","WINDSTORM","TERRORISM","TSUNAMI","VOLCANIC ERUPTION"))
-    })
+      addLayersControl(overlayGroups=threat_layers, options = layersControlOptions(collapsed=TRUE,autoZIndex = TRUE), position = c("topright", "bottomright", "bottomleft", "topleft"))  %>%
+      hideGroup(threat_layers)
+  })
   
   #Reset view to a world view
   observe({
@@ -357,15 +356,32 @@ server <- function(input, output,session) {
     leafletProxy("map") %>% setView(lat = 20, lng = 0, zoom = 2)
   })
   
-  changed_threat <- reactive({names(threat_choices)[as.numeric(input$select_threat)]})
   
   #Display only current threat layer on the map
-  observe({
-    input$currentthreat_layer
-    leafletProxy("map") %>% setView(lat = 20, lng = 0, zoom = 2) %>% 
-    hideGroup(c("CYBER CATASTROPHE","DROUGHT","EARTHQUAKE","FLOOD","HEATWAVE AND FREEZE","HUMAN PANDEMIC","INTERSTATE WAR","MARKET CRASH","NUCLEAR MELTDOWN","OIL PRICE SHOCK","PLANT EPIDEMIC","POWER OUTAGE","SOCIAL UNREST","SOLAR STORM","SOVEREIGN DEFAULT","WINDSTORM","TERRORISM","TSUNAMI","VOLCANIC ERUPTION")) %>%
-    showGroup(changed_threat())
+  changed_threat <- reactive({names(threat_choices)[as.numeric(input$select_threat)]})
+  
+  observe({ 
+    
+    if(changed_threat() %in% c("FREEZE","HEATWAVE"))
+    {
+      observe({input$currentthreat_layer
+        leafletProxy("map") %>% hideGroup(threat_layers) %>% showGroup("HEATWAVE AND FREEZE")
+      })
+    }
+    else if(changed_threat() %in% c("TEMPERATE WINDSTORM","TROPICAL WINDSTORM"))
+    {
+      observe({input$currentthreat_layer
+        leafletProxy("map") %>% hideGroup(threat_layers) %>% showGroup("WINDSTORM")
+      })
+    }
+    else
+    {
+      observe({input$currentthreat_layer
+        leafletProxy("map") %>% hideGroup(threat_layers) %>% showGroup(changed_threat())
+      })
+    }
   })
+  
   
   #Display risk ranked bar chart
   output$riskrankchart <- renderPlotly({
@@ -381,7 +397,6 @@ server <- function(input, output,session) {
     
   })
   
-  
   #Display GDP timechart
   output$gdpchart <- renderPlotly({
     
@@ -394,7 +409,6 @@ server <- function(input, output,session) {
              autosize = F, width=600, margin=list(l = 70, r = 90, b = 50, t = 50, pad = 2))
     
   })
-  
   
   #Display top cities for each threat
   output$cityrankchart <- renderPlotly({
@@ -446,7 +460,6 @@ server <- function(input, output,session) {
              autosize = F, margin=list(l = 160, r = 40, b = 50, t = 50, pad = 0))
   })
   
-  
   #Dynamically adjust the UI for relevant city that is clicked on the map by the user
   observeEvent(input$map_marker_click,{
     
@@ -454,8 +467,6 @@ server <- function(input, output,session) {
     city_clicked <- which(clicked$lng ==data_PNR$LON & clicked$lat == data_PNR$LAT)
     if(input$select_city!=city_clicked) updateSelectInput(session, "select_city", selected=as.numeric(city_clicked))
   })
-  
-  
   
   #Import portfolio file uploaded by user
   data_portfolio <- reactive(input$portfolio_file)
