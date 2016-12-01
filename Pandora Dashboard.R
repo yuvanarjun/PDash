@@ -3,6 +3,19 @@
 
 .libPaths("C:/Users/mahalingama/AppData/Local/Temp/RtmpuCxl47/downloaded_packages")
 
+# #Install required R packages
+# install.packages("shiny")
+# install.packages("jsonlite")
+# install.packages("RCurl")
+# install.packages("varhandle")
+# install.packages("ggplot2")
+# install.packages("maps")
+# install.packages("leaflet")
+# install.packages("reshape")
+# install.packages("plyr")
+# install.packages("DT")
+# install.packages("plotly")
+
 #Load required R packages
 library(shiny)
 library(jsonlite)
@@ -122,15 +135,15 @@ LIS_data <- data.frame(matrix(c(
   "SOLAR STORM","SS2","NOAA Space Weather Scale for radiation storms level S5 and equivalent to a solar flare of X40 (Similar to 'Carrington Event'; Radiation hazard to passengers and crew in commercial jets at high latitudes (approximately 10 chest x-rays). Satellite systems experience memory device problems and noise on imaging systems, GPS navigation systems prone to error, blackout of HF radio communications. Some low level electrical interference and voltage control problems. 3-5 days of disruption caused",
   "SOLAR STORM","SS3","NOAA Space Weather Scale for radiation storms level S6+ (Beyond 5-point NOAA Scale). Estimated effects of a solar flare of X60 - also known as a class Z event. High radiation exposure to passengers and crew in commercial jets at high latitudes (approximately 100 chest x-rays).Satellites rendered useless, GPS navigation systems fail, serious noise on imaging systems. Telecommunication systems fail. Widespread voltage control problems and protective system problems can occur, some grid systems may experience complete collapse or blackouts. Transformers may experience damage. Several weeks of disruption caused before systems back online",
   "SOVEREIGN DEFAULT","SD1","Country defaults and reschedules its debt, devalues its currency substantially; Investors flee. National economy loses substantial foreign direct investment",
-  "TEMPERATE WINDSTORM","HU1","Category 1 Hurricane: Windspeed 118 - 153km/hr",
-  "TEMPERATE WINDSTORM","HU2","Category 3 Hurricane: Windspeed 178 - 209km/hr",
-  "TEMPERATE WINDSTORM","HU3","Category 5 Hurricane: Windspeed >250km/hr",
+  "TEMPERATE WINDSTORM","HU1","Category 1 Hurricane: Windspeed 118 - 153 km/hr",
+  "TEMPERATE WINDSTORM","HU2","Category 3 Hurricane: Windspeed 178 - 209 km/hr",
+  "TEMPERATE WINDSTORM","HU3","Category 5 Hurricane: Windspeed >250 km/hr",
   "TERRORISM","TR1","Terror campaign with small arms and limited resources. (E.g. Shootings, poisonings, food chain sabotage, etc., with repeated attacks over a period of many months that causes fear and distrust in urban population.)",
   "TERRORISM","TR2","Well resourced and organised terrorist attacks on high profile targets. (E.g. Major truck bombings, airplanes into buildings or other surprise destructive events, causes horrific loss of life and major destruction to property in and around city centre.)",
   "TERRORISM","TR3","WMD Terrorist Attack - City is attacked by sophisticated terrorist operation using weapons of mass destruction (WMD). (E.g. Anthrax, air-dispersed bio-weapons, chemical or radioactive contaminant, or small yield nuclear detonation kills large numbers of people and contaminates many buildings in the Central Business District.)",
-  "TROPICAL WINDSTORM","HU1","Category 1 Hurricane: Windspeed 118 - 153km/hr",
-  "TROPICAL WINDSTORM","HU2","Category 3 Hurricane: Windspeed 178 - 209km/hr",
-  "TROPICAL WINDSTORM","HU3","Category 5 Hurricane: Windspeed >250km/hr",
+  "TROPICAL WINDSTORM","HU1","Category 1 Hurricane: Windspeed 118 - 153 km/hr",
+  "TROPICAL WINDSTORM","HU2","Category 3 Hurricane: Windspeed 178 - 209 km/hr",
+  "TROPICAL WINDSTORM","HU3","Category 5 Hurricane: Windspeed >250 km/hr",
   "TSUNAMI","TS1","Tsunami with 3m run-up",
   "TSUNAMI","TS2","Tsunami with 6m run-up",
   "TSUNAMI","TS3","Tsunami with 12m run-up",
@@ -176,9 +189,9 @@ ui <- fluidPage(
              
              fluidRow(
                # splitLayout(cellWidths = c("33%", "33%","33%"), plotlyOutput("cityrankchart"), plotlyOutput("gdpchart"), plotlyOutput("riskrankchart"))
-               column(4, offset = 0, plotlyOutput("cityrankchart",width = "60%", height = 400)),
-               column(4, offset = 0, plotlyOutput("gdpchart",width = "60%", height = 400)),
-               column(4, offset = 0, plotlyOutput("riskrankchart",width = "60%", height = 400))
+               column(4, offset = 0, plotlyOutput("cityrankchart",width = "100%", height = 400)),
+               column(4, offset = 0, plotlyOutput("gdpchart",width = "100%", height = 400)),
+               column(4, offset = 0, plotlyOutput("riskrankchart",width = "100%", height = 400))
              ),
              
              fluidRow(tags$br(),tags$br())
@@ -241,7 +254,12 @@ server <- function(input, output,session) {
   output$city_table <- DT::renderDataTable(DT::datatable(t(data_PNR[input$select_city,temp()]), options = list(lengthMenu = c(10, 15, 25, 50), pageLength = 15),colnames= " "))
   
   #Display LIS information Table
-  output$LIS_table <- DT::renderDataTable(DT::datatable(LIS_data[LIS_data$Threat == names(threat_choices)[as.numeric(input$select_threat)],c("LIS","Description")],rownames= FALSE))
+  observe({
+    if(changed_threat()=="ALL")
+      output$LIS_table <- DT::renderDataTable(DT::datatable(LIS_data[LIS_data$Threat %in% threat_layers,c("LIS","Description")],rownames= FALSE, options = list(lengthMenu = c(5, 10, 15), pageLength = 5)))
+    else
+      output$LIS_table <- DT::renderDataTable(DT::datatable(LIS_data[LIS_data$Threat == names(threat_choices)[as.numeric(input$select_threat)],c("LIS","Description")],rownames= FALSE,options = list(lengthMenu = c(5, 10, 15), pageLength = 5)))
+  })
   
   #data_PNR$popup_new <- reactive(paste0("City: ",data_PNR$NAME, "<br> Percent GDP@Risk Rank: ",data_PNR[,paste0("RANKING OF PERCENTAGE GDP AT RISK FROM ",names(threat_choices)[as.numeric(input$select_threat)]," THREAT")], "<br> Overall GDP@Risk Rank for chosen threat:",data_PNR[,paste0("RANKING OF USD BN GDP AT RISK FROM ",names(threat_choices)[as.numeric(input$select_threat)]," THREAT")]))
   
@@ -425,7 +443,7 @@ server <- function(input, output,session) {
   #Reset view to a world view
   observe({
     input$reset_button
-    leafletProxy("map") %>% setView(lat = 20, lng = 0, zoom = 2)
+    leafletProxy("map") %>% setView(lat = 30, lng = 0, zoom = 2)
   })
   
   
